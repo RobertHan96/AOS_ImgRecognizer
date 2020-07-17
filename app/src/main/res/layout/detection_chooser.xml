@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@color/white"
+    android:orientation="vertical"
+    android:padding="16dp"
+    >
+
+    <TextView
+        android:id="@+id/detectLabel"
+        android:text="@string/detection_label"
+        android:layout_width="200dp"
+        android:layout_height="@dimen/normal_height"
+        android:textStyle="bold"
+        android:textColor="@color/white"
+        android:textSize="@dimen/title_size"
+        android:gravity="center"
+        android:background="@drawable/btn_background"/>
+
+    <TextView
+        android:id="@+id/detectLandmark"
+        android:text="@string/detection_landmark"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"
+        android:layout_width="200dp"
+        android:layout_height="@dimen/normal_height"
+        android:textStyle="bold"
+        android:textColor="@color/white"
+        android:textSize="@dimen/title_size"
+        android:gravity="center"
+        android:background="@drawable/btn_background"/>
+
+    <TextView
+        android:id="@+id/detectCancel"
+        android:text="@string/cancel"
+        android:layout_width="200dp"
+        android:layout_height="@dimen/normal_height"
+        android:textStyle="bold"
+        android:textColor="@color/white"
+        android:textSize="@dimen/title_size"
+        android:gravity="center"
+        android:background="@drawable/btn_background"/>
+</LinearLayout>

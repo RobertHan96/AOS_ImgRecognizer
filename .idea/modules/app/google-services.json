@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "412559912896",
+    "firebase_url": "https://mlvision-568fb.firebaseio.com",
+    "project_id": "mlvision-568fb",
+    "storage_bucket": "mlvision-568fb.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:412559912896:android:269f77f92077dcbb702225",
+        "android_client_info": {
+          "package_name": "com.studiofirstzero.imagerecognizier"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "412559912896-hls2v1it2h5rskcfjggp5cab64v9vi7c.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.studiofirstzero.imagerecognizier",
+            "certificate_hash": "a33d6aeb166b8a022330fc0cb3c99d53a1938f76"
+          }
+        },
+        {
+          "client_id": "412559912896-e7uhs0flta4qbodgkcnecpdevh3lha1j.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD_oU5AhBKuz8NMWGUnp7KkYW67KZThB7M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "412559912896-e7uhs0flta4qbodgkcnecpdevh3lha1j.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "412559912896-1bv4phhhe5a3smfok64qc9eqml39k5dj.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.studiofirstzero.ImageRecognizier"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
