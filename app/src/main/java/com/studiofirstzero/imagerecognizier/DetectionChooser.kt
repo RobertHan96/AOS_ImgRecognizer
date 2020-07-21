@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.DialogFragment
+import com.studiofirstzero.imagerecognizier.R
 import kotlinx.android.synthetic.main.detection_chooser.*
 
 class DetectionChooser : DialogFragment() {
