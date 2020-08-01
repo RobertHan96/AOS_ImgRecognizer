@@ -115,56 +115,28 @@ class MainActivity : BaseActivity() {
         }
 
     }
+
     // 원하는 이름으로 이미지 파일을 저장하는 함수
     private fun createCameraFile() : File {
         val dir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
         return  File(dir, FILE_NAME)
-
     }
 
     private fun uploadImage(imagerUri : Uri) {
         val bitmap : Bitmap = MediaStore.Images.Media.getBitmap(contentResolver, imagerUri)
+        val visionImageDetcetor = VisionImageDetcetor()
         uploadChooser?.dismiss()
         DetectionChooser().apply {
             addDetectionChooserNotifierInterface(object : DetectionChooser.DetectionChooserNotifierInterface{
                 override fun detectLabel() {
+                    val detectLabelResults = visionImageDetcetor.detectLabels(bitmap)
                     findViewById<ImageView>(R.id.uploadedImg).setImageBitmap(bitmap)
-
-                    val visionImage = FirebaseVisionImage.fromBitmap(bitmap)
-//                    val labeler = FirebaseVision.getInstance().onDeviceImageLabeler
-                    val labeler = FirebaseVision.getInstance().cloudImageLabeler
-                    labeler.processImage(visionImage).addOnSuccessListener { labels->
-
-                        val name =labels.first().text
-                        val confidence = (labels.first().confidence * 100).toInt()
-                            Log.d("FirebaseVision", "분석 결과 : $name 유사도 : $confidence")
-                            runOnUiThread {
-                                findViewById<TextView>(R.id.uploadedImgResult).text = "$name - $confidence% 일치"
-                            }
-
-                    }.addOnFailureListener { e ->
-                        Log.d("FirebaseVision", "$e")
-                    }
 
                 }
 
                 override fun detectLandmark() {
+                    val detectLabelResults = visionImageDetcetor.detectLandmarks(bitmap)
                     findViewById<ImageView>(R.id.uploadedImg).setImageBitmap(bitmap)
-                    val visionImage = FirebaseVisionImage.fromBitmap(bitmap)
-                    val detector = FirebaseVision.getInstance().visionCloudLandmarkDetector
-                    val result = detector.detectInImage(visionImage)
-                        .addOnSuccessListener { firebaseVisionCloudLandmarks ->
-                            val name = firebaseVisionCloudLandmarks.first().landmark
-                            val confidence = firebaseVisionCloudLandmarks.first().confidence
-                            Log.d("FirebaseVision", "분석 결과 : $name 유사도 : $confidence")
-                            runOnUiThread {
-                                findViewById<TextView>(R.id.uploadedImgResult).text = "$name - $confidence% 일치"
-                            }
-
-                        }
-                        .addOnFailureListener { e ->
-                            Log.d("FirebaseVision", "$e")
-                        }
 
                 }
 
