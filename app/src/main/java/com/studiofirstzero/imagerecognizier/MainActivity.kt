@@ -86,7 +86,7 @@ class MainActivity : BaseActivity() {
     }
 
     private fun  openGallery() {
-        val intent = Intent().apply {
+        val intent = Intent(Intent.ACTION_PICK).apply {
             setType("image/*")
             setAction(Intent.ACTION_GET_CONTENT)
         }
@@ -131,8 +131,10 @@ class MainActivity : BaseActivity() {
                     findViewById<ImageView>(R.id.uploadedImg).setImageBitmap(bitmap)
 
                     val visionImage = FirebaseVisionImage.fromBitmap(bitmap)
-                    val labeler = FirebaseVision.getInstance().onDeviceImageLabeler
+//                    val labeler = FirebaseVision.getInstance().onDeviceImageLabeler
+                    val labeler = FirebaseVision.getInstance().cloudImageLabeler
                     labeler.processImage(visionImage).addOnSuccessListener { labels->
+
                         val name =labels.first().text
                         val confidence = (labels.first().confidence * 100).toInt()
                             Log.d("FirebaseVision", "분석 결과 : $name 유사도 : $confidence")
@@ -148,6 +150,22 @@ class MainActivity : BaseActivity() {
 
                 override fun detectLandmark() {
                     findViewById<ImageView>(R.id.uploadedImg).setImageBitmap(bitmap)
+                    val visionImage = FirebaseVisionImage.fromBitmap(bitmap)
+                    val detector = FirebaseVision.getInstance().visionCloudLandmarkDetector
+                    val result = detector.detectInImage(visionImage)
+                        .addOnSuccessListener { firebaseVisionCloudLandmarks ->
+                            val name = firebaseVisionCloudLandmarks.first().landmark
+                            val confidence = firebaseVisionCloudLandmarks.first().confidence
+                            Log.d("FirebaseVision", "분석 결과 : $name 유사도 : $confidence")
+                            runOnUiThread {
+                                findViewById<TextView>(R.id.uploadedImgResult).text = "$name - $confidence% 일치"
+                            }
+
+                        }
+                        .addOnFailureListener { e ->
+                            Log.d("FirebaseVision", "$e")
+                        }
+
                 }
 
             })
