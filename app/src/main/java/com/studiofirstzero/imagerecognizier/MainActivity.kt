@@ -12,9 +12,11 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.FileProvider
 import com.github.mikephil.charting.charts.BarChart
+import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.BarData
 import com.github.mikephil.charting.data.BarDataSet
 import com.github.mikephil.charting.data.BarEntry
+import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.google.firebase.ml.vision.FirebaseVision
 import com.google.firebase.ml.vision.common.FirebaseVisionImage
 import com.studiohana.facerecognizer.DetectionChooser
@@ -166,7 +168,6 @@ class MainActivity : BaseActivity() {
        val entries = ArrayList<BarEntry>()
         entries.add(BarEntry(8f, 1f))
         entries.add(BarEntry(10f, 4f))
-
         val barDataSet = BarDataSet(entries, "Data Value")
 
         val labels = ArrayList<String>()
@@ -174,12 +175,19 @@ class MainActivity : BaseActivity() {
         labels.add("19-Jan")
 
         val data = BarData(barDataSet)
-        barChart.data = data // set the data and list of lables into chart
+        barChart.data = data
 
-        //barDataSet.setColors(ColorTemplate.COLORFUL_COLORS)
         barDataSet.color = resources.getColor(R.color.colorAccent)
-
-        barChart.animateY(5000)
+        barChart.animateY(2000)
+        barChart.apply {
+            axisLeft.isEnabled = false
+            axisRight.isEnabled = false
+            legend.isEnabled = false
+            description.isEnabled = false
+            xAxis.valueFormatter = IndexAxisValueFormatter(labels)
+            xAxis.position = XAxis.XAxisPosition.BOTTOM_INSIDE
+            xAxis.setDrawLabels(true)
+        }
     }
 
     //    카메라 or 갤러리 선택시 실행할 로직을 결정하는 함수

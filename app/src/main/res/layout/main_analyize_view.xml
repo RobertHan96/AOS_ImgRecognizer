@@ -27,7 +27,6 @@
                 android:textSize="@dimen/title_size"
                 android:textStyle="bold"
                 android:text="@string/pleas_upload_img"/>
-            
             <ImageView
                 android:id="@+id/uploadedImg"
                 android:src="@mipmap/ic_launcher"
@@ -37,10 +36,11 @@
 
             <com.github.mikephil.charting.charts.BarChart
                 android:id="@+id/barChart"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"
+                android:clickable="false"
                 android:layout_width="match_parent"
-                android:layout_height="200dp"/>
-
-
+                android:layout_height="match_parent"/>
         </LinearLayout>
 
     </ScrollView>
