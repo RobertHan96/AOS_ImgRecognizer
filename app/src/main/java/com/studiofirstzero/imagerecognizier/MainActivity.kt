@@ -11,6 +11,10 @@ import android.util.Log
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.FileProvider
+import com.github.mikephil.charting.charts.BarChart
+import com.github.mikephil.charting.data.BarData
+import com.github.mikephil.charting.data.BarDataSet
+import com.github.mikephil.charting.data.BarEntry
 import com.google.firebase.ml.vision.FirebaseVision
 import com.google.firebase.ml.vision.common.FirebaseVisionImage
 import com.studiohana.facerecognizer.DetectionChooser
@@ -55,7 +59,7 @@ class MainActivity : BaseActivity() {
     }
 
     override fun setValues() {
-
+        setChart()
     }
 
     private fun checkCameraPermission(){
@@ -75,6 +79,7 @@ class MainActivity : BaseActivity() {
             openGallery()
         }
     }
+
     // 생성된 이미지 파일을 Uri를 통해 저장하는 함수
     private fun  openCamera() {
         val photoUri = FileProvider.getUriForFile(this, applicationContext.packageName + ".provider", createCameraFile())
@@ -129,19 +134,52 @@ class MainActivity : BaseActivity() {
         DetectionChooser().apply {
             addDetectionChooserNotifierInterface(object : DetectionChooser.DetectionChooserNotifierInterface{
                 override fun detectLabel() {
-                    val detectLabelResults = visionImageDetcetor.detectLabels(bitmap)
-                    findViewById<ImageView>(R.id.uploadedImg).setImageBitmap(bitmap)
+                    val detectLabelResults = visionImageDetcetor.detectLabels(bitmap).apply {
+                        visionImageDetcetor.logResult(this)
+
+
+                        runOnUiThread {
+                            findViewById<ImageView>(R.id.uploadedImg).setImageBitmap(bitmap)
+                        }
+
+                    }
 
                 }
 
                 override fun detectLandmark() {
-                    val detectLabelResults = visionImageDetcetor.detectLandmarks(bitmap)
-                    findViewById<ImageView>(R.id.uploadedImg).setImageBitmap(bitmap)
+                    val detectLabelResults = visionImageDetcetor.detectLandmarks(bitmap).apply {
+                        visionImageDetcetor.logResult(this)
+
+                        runOnUiThread {
+                            findViewById<ImageView>(R.id.uploadedImg).setImageBitmap(bitmap)
+                        }
+
+                    }
 
                 }
 
             })
         }.show(supportFragmentManager, "")
+    }
+
+    private fun setChart() {
+       val entries = ArrayList<BarEntry>()
+        entries.add(BarEntry(8f, 1f))
+        entries.add(BarEntry(10f, 4f))
+
+        val barDataSet = BarDataSet(entries, "Data Value")
+
+        val labels = ArrayList<String>()
+        labels.add("18-Jan")
+        labels.add("19-Jan")
+
+        val data = BarData(barDataSet)
+        barChart.data = data // set the data and list of lables into chart
+
+        //barDataSet.setColors(ColorTemplate.COLORFUL_COLORS)
+        barDataSet.color = resources.getColor(R.color.colorAccent)
+
+        barChart.animateY(5000)
     }
 
     //    카메라 or 갤러리 선택시 실행할 로직을 결정하는 함수

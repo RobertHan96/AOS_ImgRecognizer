@@ -7,12 +7,6 @@ import com.google.firebase.ml.vision.FirebaseVision
 import com.google.firebase.ml.vision.common.FirebaseVisionImage
 
 class VisionImageDetcetor {
-    private var detectionResultSetupInterface : DetectionResultSetupInterface? = null
-
-    interface DetectionResultSetupInterface {
-        fun setupDetectLabel()
-    }
-
     fun logResult(results: ArrayList<VisionDetectResult>) {
         for(result in results){
             Log.d("VisionDetector", "$result")
@@ -29,7 +23,6 @@ class VisionImageDetcetor {
                 val confidence = label.confidence
                 val visionDetectedResult = VisionDetectResult(name, confidence)
                 detectResults.add(visionDetectedResult)
-                detectionResultSetupInterface?.setupDetectLabel()
             }
 
         }.addOnFailureListener { e ->
@@ -49,7 +42,6 @@ class VisionImageDetcetor {
                     val confidence = landmark.confidence
                     val visionDetectResult = VisionDetectResult(name, confidence)
                     detectResults.add(visionDetectResult)
-                    detectionResultSetupInterface?.setupDetectLabel()
                 }
 
             }
