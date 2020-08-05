@@ -9,22 +9,19 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.ImageView
-import android.widget.TextView
 import androidx.core.content.FileProvider
-import com.github.mikephil.charting.charts.BarChart
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.BarData
 import com.github.mikephil.charting.data.BarDataSet
 import com.github.mikephil.charting.data.BarEntry
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
-import com.google.firebase.ml.vision.FirebaseVision
-import com.google.firebase.ml.vision.common.FirebaseVisionImage
 import com.studiohana.facerecognizer.DetectionChooser
 import com.studiohana.facerecognizer.PermissionUtil
 import com.studiohana.facerecognizer.UploadChooser
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.main_analyize_view.*
 import java.io.File
+import java.lang.Exception
 
 class MainActivity : BaseActivity() {
     private val CAMERA_PERMISSION_REQUEST = 1000
@@ -93,17 +90,21 @@ class MainActivity : BaseActivity() {
     }
 
     private fun  openGallery() {
-        val intent = Intent(Intent.ACTION_PICK).apply {
-            setType("image/*")
-            setAction(Intent.ACTION_GET_CONTENT)
-        }
-        startActivityForResult(Intent.createChooser(intent,"Select a photo"), GALLERY_PERMISSION_REQUEST)
+        val intent = Intent()
+        intent.type = "image/*"
+        intent.action = Intent.ACTION_GET_CONTENT
+//        val intent = Intent().apply {
+//            setData(MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+//            setType("image/*")
+//            setAction(Intent.ACTION_GET_CONTENT)
+//        }
+        startActivityForResult(Intent.createChooser(intent, "Select a photo"), GALLERY_PERMISSION_REQUEST)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         when(requestCode) {
-//           카메라 찍기 작업이 잘된 경우에만 동작할 부분을 오버라이드, 여기서는 사진을 저장해서 보여
+//           각 intent에서 작업할 상세 내용 구현, REQUEST_CODE로 구분
             CAMERA_PERMISSION_REQUEST -> {
                 if (resultCode != Activity.RESULT_OK) return
                 val photoUri = FileProvider.getUriForFile(this, applicationContext.packageName + ".provider", createCameraFile())
@@ -111,16 +112,43 @@ class MainActivity : BaseActivity() {
             }
 
             GALLERY_PERMISSION_REQUEST -> {
-                data?.let {
-                    it.data
-                    val photoUri = FileProvider.getUriForFile(this, applicationContext.packageName + ".provider", createCameraFile())
-                    uploadImage(photoUri)
-                }
+                if (resultCode != Activity.RESULT_OK) return
+                    var photoUri = data?.data
+                    try {
+                        val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, photoUri)
+                        findViewById<ImageView>(R.id.uploadedImg).setImageBitmap(bitmap)
+                        uploadChooser?.dismiss()
+                        val visionImageDetcetor = VisionImageDetcetor()
+                        val detectLabelResults = visionImageDetcetor.detectLabels(bitmap).apply {
+                            visionImageDetcetor.logResult(this)
+                        }
 
+//                        DetectionChooser().apply {
+//                            val visionImageDetcetor = VisionImageDetcetor()
+//                            addDetectionChooserNotifierInterface(object : DetectionChooser.DetectionChooserNotifierInterface{
+//                                override fun detectLabel() {
+//                                    val detectLabelResults = visionImageDetcetor.detectLabels(bitmap).apply {
+//                                        visionImageDetcetor.logResult(this)
+//                                    }
+//                                }
+//
+//                                override fun detectLandmark() {
+//                                    val detectLabelResults = visionImageDetcetor.detectLandmarks(bitmap).apply {
+//                                        visionImageDetcetor.logResult(this)
+//                                    }
+//                                }
+
+//                            })
+
+//                        }
+
+
+                    } catch (e:Exception) {
+                        e.printStackTrace()
+                    }
             }
 
         }
-
     }
 
     // 원하는 이름으로 이미지 파일을 저장하는 함수
@@ -138,26 +166,19 @@ class MainActivity : BaseActivity() {
                 override fun detectLabel() {
                     val detectLabelResults = visionImageDetcetor.detectLabels(bitmap).apply {
                         visionImageDetcetor.logResult(this)
-
-
                         runOnUiThread {
                             findViewById<ImageView>(R.id.uploadedImg).setImageBitmap(bitmap)
                         }
-
                     }
-
                 }
 
                 override fun detectLandmark() {
                     val detectLabelResults = visionImageDetcetor.detectLandmarks(bitmap).apply {
                         visionImageDetcetor.logResult(this)
-
                         runOnUiThread {
                             findViewById<ImageView>(R.id.uploadedImg).setImageBitmap(bitmap)
                         }
-
                     }
-
                 }
 
             })
