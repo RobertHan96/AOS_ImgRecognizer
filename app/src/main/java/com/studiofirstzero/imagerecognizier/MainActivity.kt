@@ -15,6 +15,8 @@ import com.github.mikephil.charting.data.BarData
 import com.github.mikephil.charting.data.BarDataSet
 import com.github.mikephil.charting.data.BarEntry
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
+import com.google.firebase.ml.vision.FirebaseVision
+import com.google.firebase.ml.vision.common.FirebaseVisionImage
 import com.studiohana.facerecognizer.DetectionChooser
 import com.studiohana.facerecognizer.PermissionUtil
 import com.studiohana.facerecognizer.UploadChooser
@@ -79,7 +81,6 @@ class MainActivity : BaseActivity() {
         }
     }
 
-    // 생성된 이미지 파일을 Uri를 통해 저장하는 함수
     private fun  openCamera() {
         val photoUri = FileProvider.getUriForFile(this, applicationContext.packageName + ".provider", createCameraFile())
         startActivityForResult(
@@ -93,12 +94,13 @@ class MainActivity : BaseActivity() {
         val intent = Intent()
         intent.type = "image/*"
         intent.action = Intent.ACTION_GET_CONTENT
-//        val intent = Intent().apply {
-//            setData(MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-//            setType("image/*")
-//            setAction(Intent.ACTION_GET_CONTENT)
-//        }
         startActivityForResult(Intent.createChooser(intent, "Select a photo"), GALLERY_PERMISSION_REQUEST)
+    }
+
+    // 원하는 이름으로 이미지 파일을 저장하는 함수
+    private fun createCameraFile() : File {
+        val dir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        return  File(dir, FILE_NAME)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -115,46 +117,12 @@ class MainActivity : BaseActivity() {
                 if (resultCode != Activity.RESULT_OK) return
                     var photoUri = data?.data
                     try {
-                        val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, photoUri)
-                        findViewById<ImageView>(R.id.uploadedImg).setImageBitmap(bitmap)
-                        uploadChooser?.dismiss()
-                        val visionImageDetcetor = VisionImageDetcetor()
-                        val detectLabelResults = visionImageDetcetor.detectLabels(bitmap).apply {
-                            visionImageDetcetor.logResult(this)
-                        }
-
-//                        DetectionChooser().apply {
-//                            val visionImageDetcetor = VisionImageDetcetor()
-//                            addDetectionChooserNotifierInterface(object : DetectionChooser.DetectionChooserNotifierInterface{
-//                                override fun detectLabel() {
-//                                    val detectLabelResults = visionImageDetcetor.detectLabels(bitmap).apply {
-//                                        visionImageDetcetor.logResult(this)
-//                                    }
-//                                }
-//
-//                                override fun detectLandmark() {
-//                                    val detectLabelResults = visionImageDetcetor.detectLandmarks(bitmap).apply {
-//                                        visionImageDetcetor.logResult(this)
-//                                    }
-//                                }
-
-//                            })
-
-//                        }
-
-
+                        uploadImage(photoUri!!)
                     } catch (e:Exception) {
                         e.printStackTrace()
                     }
             }
-
         }
-    }
-
-    // 원하는 이름으로 이미지 파일을 저장하는 함수
-    private fun createCameraFile() : File {
-        val dir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-        return  File(dir, FILE_NAME)
     }
 
     private fun uploadImage(imagerUri : Uri) {
@@ -164,21 +132,12 @@ class MainActivity : BaseActivity() {
         DetectionChooser().apply {
             addDetectionChooserNotifierInterface(object : DetectionChooser.DetectionChooserNotifierInterface{
                 override fun detectLabel() {
-                    val detectLabelResults = visionImageDetcetor.detectLabels(bitmap).apply {
-                        visionImageDetcetor.logResult(this)
-                        runOnUiThread {
-                            findViewById<ImageView>(R.id.uploadedImg).setImageBitmap(bitmap)
-                        }
-                    }
+                    findViewById<ImageView>(R.id.uploadedImg).setImageBitmap(bitmap)
+
                 }
 
                 override fun detectLandmark() {
-                    val detectLabelResults = visionImageDetcetor.detectLandmarks(bitmap).apply {
-                        visionImageDetcetor.logResult(this)
-                        runOnUiThread {
-                            findViewById<ImageView>(R.id.uploadedImg).setImageBitmap(bitmap)
-                        }
-                    }
+                    findViewById<ImageView>(R.id.uploadedImg).setImageBitmap(bitmap)
                 }
 
             })
@@ -205,9 +164,10 @@ class MainActivity : BaseActivity() {
             axisRight.isEnabled = false
             legend.isEnabled = false
             description.isEnabled = false
+            xAxis.setCenterAxisLabels(false)
+            xAxis.granularity = 1f
             xAxis.valueFormatter = IndexAxisValueFormatter(labels)
-            xAxis.position = XAxis.XAxisPosition.BOTTOM_INSIDE
-            xAxis.setDrawLabels(true)
+//            xAxis.position = XAxis.XAxisPosition.BOTTOM_INSIDE
         }
     }
 

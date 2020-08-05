@@ -6,7 +6,8 @@ import android.widget.TextView
 import com.google.firebase.ml.vision.FirebaseVision
 import com.google.firebase.ml.vision.common.FirebaseVisionImage
 
-class VisionImageDetcetor {
+class VisionImageDetcetor() {
+
     fun logResult(results: ArrayList<VisionDetectResult>) {
         for(result in results){
             Log.d("VisionDetector", "$result")
