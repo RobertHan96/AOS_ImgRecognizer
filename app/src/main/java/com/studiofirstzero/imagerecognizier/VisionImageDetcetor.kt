@@ -22,6 +22,7 @@ class VisionImageDetcetor {
                 val name = label.text
                 val confidence = label.confidence
                 val visionDetectedResult = VisionDetectResult(name, confidence)
+                Log.d("VisionDetector", "$visionDetectedResult")
                 detectResults.add(visionDetectedResult)
             }
 

@@ -30,6 +30,7 @@ class MainActivity : BaseActivity() {
     private val CAMERA_PERMISSION_REQUEST = 1000
     private val GALLERY_PERMISSION_REQUEST = 1001
     private val FILE_NAME = "picture.jpg"
+    lateinit var currentPhotoPath : String
     private var uploadChooser : UploadChooser? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -161,8 +162,6 @@ class MainActivity : BaseActivity() {
                     override fun detectLabel() {
                         val detectLabelResults = visionImageDetcetor.detectLabels(bitmap).apply {
                             visionImageDetcetor.logResult(this)
-
-
                             runOnUiThread {
                                 findViewById<ImageView>(R.id.uploadedImg).setImageBitmap(bitmap)
                             }
@@ -194,7 +193,7 @@ class MainActivity : BaseActivity() {
 
     private fun getBitmapFromUri(imageUri: Uri) : Bitmap {
         lateinit var bitmap : Bitmap
-        if (Build.VERSION.SDK_INT >= 28) {
+        if (Build.VERSION.SDK_INT > 28) {
             val source: ImageDecoder.Source =
                 ImageDecoder.createSource(applicationContext.contentResolver, imageUri)
             try {
