@@ -62,7 +62,7 @@ class MainActivity : BaseActivity() {
     }
 
     override fun setValues() {
-        setChart()
+//        setChart()
     }
 
     private fun checkCameraPermission(){
@@ -165,9 +165,8 @@ class MainActivity : BaseActivity() {
                             runOnUiThread {
                                 findViewById<ImageView>(R.id.uploadedImg).setImageBitmap(bitmap)
                             }
-
                         }
-
+                        setChart(detectLabelResults)
                     }
 
                     override fun detectLandmark() {
@@ -179,7 +178,7 @@ class MainActivity : BaseActivity() {
                             }
 
                         }
-
+                        setChart(detectLabelResults)
                     }
 
                 })
@@ -214,15 +213,19 @@ class MainActivity : BaseActivity() {
     }
 
 
-    private fun setChart() {
+    private fun setChart(labelArrary : ArrayList<VisionDetectResult>) {
        val entries = ArrayList<BarEntry>()
-        entries.add(BarEntry(8f, 1f))
-        entries.add(BarEntry(10f, 4f))
+        val labels = ArrayList<String>()
+        for (label in labelArrary) {
+            entries.add(BarEntry(1f,label.confidence))
+            labels.add("${label.name}")
+        }
+//        entries.add(BarEntry(8f, 1f))
+//        entries.add(BarEntry(10f, 4f))
+//        labels.add("18-Jan")
+//        labels.add("19-Jan")
         val barDataSet = BarDataSet(entries, "Data Value")
 
-        val labels = ArrayList<String>()
-        labels.add("18-Jan")
-        labels.add("19-Jan")
 
         val data = BarData(barDataSet)
         barChart.data = data
