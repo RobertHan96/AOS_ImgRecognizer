@@ -2,12 +2,14 @@ package com.studiofirstzero.imagerecognizier
 
 import android.app.Activity
 import android.content.Intent
+import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.os.Handler
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.ImageView
@@ -30,7 +32,6 @@ class MainActivity : BaseActivity() {
     private val CAMERA_PERMISSION_REQUEST = 1000
     private val GALLERY_PERMISSION_REQUEST = 1001
     private val FILE_NAME = "picture.jpg"
-    lateinit var currentPhotoPath : String
     private var uploadChooser : UploadChooser? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,55 +63,6 @@ class MainActivity : BaseActivity() {
     }
 
     override fun setValues() {
-//        setChart()
-    }
-
-    private fun checkCameraPermission(){
-        if (PermissionUtil().requestPermission(
-                this,
-                CAMERA_PERMISSION_REQUEST,
-                android.Manifest.permission.CAMERA,
-                android.Manifest.permission.READ_EXTERNAL_STORAGE
-            )
-        ) {
-            openCamera()
-        }
-    }
-
-    private fun checkGalleryPermission(){
-        if (PermissionUtil().requestPermission(
-                this, GALLERY_PERMISSION_REQUEST,
-                android.Manifest.permission.READ_EXTERNAL_STORAGE
-            )
-        ) {
-            openGallery()
-        }
-    }
-
-    // 생성된 이미지 파일을 Uri를 통해 저장하는 함수
-    private fun  openCamera() {
-        val photoUri = FileProvider.getUriForFile(
-            this,
-            applicationContext.packageName + ".provider",
-            createCameraFile()
-        )
-        startActivityForResult(
-            Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
-                putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }, CAMERA_PERMISSION_REQUEST
-        )
-    }
-
-    private fun  openGallery() {
-        val intent = Intent(Intent.ACTION_PICK).apply {
-            setType("image/*")
-            setAction(Intent.ACTION_GET_CONTENT)
-        }
-        startActivityForResult(
-            Intent.createChooser(intent, "Select a photo"),
-            GALLERY_PERMISSION_REQUEST
-        )
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -119,39 +71,33 @@ class MainActivity : BaseActivity() {
 //           카메라 찍기 작업이 잘된 경우에만 동작할 부분을 오버라이드, 여기서는 사진을 저장해서 보여
             CAMERA_PERMISSION_REQUEST -> {
                 if (resultCode != Activity.RESULT_OK) return
-                // FileProvide에서 에러 발생
                 val photoUri = FileProvider.getUriForFile(
                     this,
                     applicationContext.packageName + ".provider",
-                    createCameraFile()
+                    this.createImageFile()
                 )
                 uploadImage(photoUri)
             }
 
             GALLERY_PERMISSION_REQUEST -> {
-                data?.let {
-                    it.data
-                    val photoUri = FileProvider.getUriForFile(
-                        this,
-                        applicationContext.packageName + ".provider",
-                        createCameraFile()
-                    )
-                    Log.d("Log hi", photoUri.toString())
-                    uploadImage(photoUri)
-                }
+//                findViewById<ImageView>(R.id.uploadedImg).setImageURI(data?.data)
+                val photoUri = FileProvider.getUriForFile(
+                    this,
+                    applicationContext.packageName + ".provider",
+                    this.createImageFile()
+                )
+                Log.d("log", "image file path is ${photoUri.toString()}")
+                Log.d("log", "image file path is ${data?.data.toString()}")
+
+                uploadImage(photoUri)
             }
 
         }
 
     }
 
-    // 원하는 이름으로 이미지 파일을 저장하는 함수
-    private fun createCameraFile() : File {
-        val dir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-        return  File(dir, FILE_NAME)
-    }
-
     private fun uploadImage(imagerUri: Uri) {
+        Log.d("log", "Image is selected")
         try {
             val bitmap = getBitmapFromUri(imagerUri)
             val visionImageDetcetor = VisionImageDetcetor()
@@ -166,7 +112,12 @@ class MainActivity : BaseActivity() {
                                 findViewById<ImageView>(R.id.uploadedImg).setImageBitmap(bitmap)
                             }
                         }
-                        setChart(detectLabelResults)
+
+                        Handler().postDelayed({
+                            runOnUiThread {
+                                setChart(detectLabelResults)
+                            }
+                        }, 4000)
                     }
 
                     override fun detectLandmark() {
@@ -178,7 +129,9 @@ class MainActivity : BaseActivity() {
                             }
 
                         }
-                        setChart(detectLabelResults)
+                        Handler().postDelayed({
+                            setChart(detectLabelResults)
+                        }, 2000)
                     }
 
                 })
@@ -212,18 +165,14 @@ class MainActivity : BaseActivity() {
 
     }
 
-
     private fun setChart(labelArrary : ArrayList<VisionDetectResult>) {
-       val entries = ArrayList<BarEntry>()
+        val entries = ArrayList<BarEntry>()
         val labels = ArrayList<String>()
         for (label in labelArrary) {
             entries.add(BarEntry(1f,label.confidence))
             labels.add("${label.name}")
+            Log.d("log","setChart call")
         }
-//        entries.add(BarEntry(8f, 1f))
-//        entries.add(BarEntry(10f, 4f))
-//        labels.add("18-Jan")
-//        labels.add("19-Jan")
         val barDataSet = BarDataSet(entries, "Data Value")
 
 
@@ -271,6 +220,62 @@ class MainActivity : BaseActivity() {
                     openCamera()
             }
         }
+    }
+
+//    권한 설정 및 인텐트 접근 관련
+    private fun checkCameraPermission(){
+        if (PermissionUtil().requestPermission(
+                this,
+                CAMERA_PERMISSION_REQUEST,
+                android.Manifest.permission.CAMERA,
+                android.Manifest.permission.READ_EXTERNAL_STORAGE
+            )
+        ) {
+            openCamera()
+        }
+    }
+
+    private fun checkGalleryPermission(){
+        if (PermissionUtil().requestPermission(
+                this, GALLERY_PERMISSION_REQUEST,
+                android.Manifest.permission.READ_EXTERNAL_STORAGE
+            )
+        ) {
+            openGallery()
+        }
+    }
+
+    // 생성된 이미지 파일을 Uri를 통해 저장하는 함수
+    private fun  openCamera() {
+        val photoUri = FileProvider.getUriForFile(
+            this,
+            applicationContext.packageName + ".provider",
+            this.createImageFile()
+        )
+        startActivityForResult(
+            Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
+                putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }, CAMERA_PERMISSION_REQUEST
+        )
+    }
+
+    private fun  openGallery() {
+        val intent = Intent(Intent.ACTION_PICK).apply {
+            setType("image/*")
+            setData(MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+            setAction(Intent.ACTION_GET_CONTENT)
+        }
+        startActivityForResult(
+            Intent.createChooser(intent, "Select a photo"),
+            GALLERY_PERMISSION_REQUEST
+        )
+    }
+
+    private fun createImageFile() : File {
+        val dir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        Log.d("log", "image file path")
+        return  File(dir, FILE_NAME)
     }
 
 }
