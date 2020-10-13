@@ -1,10 +1,9 @@
 package com.studiofirstzero.imagerecognizier
-
 import android.app.Activity
 import android.content.Intent
-import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
+import android.graphics.Matrix
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -12,13 +11,16 @@ import android.os.Environment
 import android.os.Handler
 import android.provider.MediaStore
 import android.util.Log
+import android.view.Gravity
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.core.content.FileProvider
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.BarData
 import com.github.mikephil.charting.data.BarDataSet
 import com.github.mikephil.charting.data.BarEntry
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
+import com.github.mikephil.charting.formatter.ValueFormatter
 import com.studiohana.facerecognizer.DetectionChooser
 import com.studiohana.facerecognizer.PermissionUtil
 import com.studiohana.facerecognizer.UploadChooser
@@ -26,7 +28,6 @@ import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.main_analyize_view.*
 import java.io.File
 import java.io.IOException
-
 
 class MainActivity : BaseActivity() {
     private val CAMERA_PERMISSION_REQUEST = 1000
@@ -68,6 +69,7 @@ class MainActivity : BaseActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         when(requestCode) {
+
 //           카메라 찍기 작업이 잘된 경우에만 동작할 부분을 오버라이드, 여기서는 사진을 저장해서 보여
             CAMERA_PERMISSION_REQUEST -> {
                 if (resultCode != Activity.RESULT_OK) return
@@ -76,40 +78,49 @@ class MainActivity : BaseActivity() {
                     applicationContext.packageName + ".provider",
                     this.createImageFile()
                 )
-                uploadImage(photoUri)
+                val bitmap = getBitmapFromUri(photoUri)
+                uploadImage(bitmap)
             }
 
             GALLERY_PERMISSION_REQUEST -> {
-//                findViewById<ImageView>(R.id.uploadedImg).setImageURI(data?.data)
                 val photoUri = FileProvider.getUriForFile(
                     this,
                     applicationContext.packageName + ".provider",
                     this.createImageFile()
                 )
-                Log.d("log", "image file path is ${photoUri.toString()}")
-                Log.d("log", "image file path is ${data?.data.toString()}")
 
-                uploadImage(photoUri)
+                try {
+                    val bitmap = getBitmapFromUri(data?.data!!)
+                    val bitmapRotated = rotateBitmap(bitmap, 90f)
+                    uploadImage(bitmapRotated)
+                }  catch (e: Exception) {
+                    runOnUiThread {
+                        val toast = Toast.makeText(applicationContext, "이미지만 선택해주세요", Toast.LENGTH_SHORT)
+                        toast.setGravity(Gravity.CENTER, Gravity.CENTER_HORIZONTAL, Gravity.CENTER_VERTICAL)
+                        toast.show()
+                    }
+                    Log.d("log", e.toString())
+                }
+
             }
 
         }
 
     }
 
-    private fun uploadImage(imagerUri: Uri) {
+    private fun uploadImage(bitmapImage: Bitmap) {
         Log.d("log", "Image is selected")
         try {
-            val bitmap = getBitmapFromUri(imagerUri)
             val visionImageDetcetor = VisionImageDetcetor()
             uploadChooser?.dismiss()
             DetectionChooser().apply {
                 addDetectionChooserNotifierInterface(object :
                     DetectionChooser.DetectionChooserNotifierInterface {
                     override fun detectLabel() {
-                        val detectLabelResults = visionImageDetcetor.detectLabels(bitmap).apply {
+                        val detectLabelResults = visionImageDetcetor.detectLabels(bitmapImage).apply {
                             visionImageDetcetor.logResult(this)
                             runOnUiThread {
-                                findViewById<ImageView>(R.id.uploadedImg).setImageBitmap(bitmap)
+                                findViewById<ImageView>(R.id.uploadedImg).setImageBitmap(bitmapImage)
                             }
                         }
 
@@ -121,11 +132,11 @@ class MainActivity : BaseActivity() {
                     }
 
                     override fun detectLandmark() {
-                        val detectLabelResults = visionImageDetcetor.detectLandmarks(bitmap).apply {
+                        val detectLabelResults = visionImageDetcetor.detectLandmarks(bitmapImage).apply {
                             visionImageDetcetor.logResult(this)
 
                             runOnUiThread {
-                                findViewById<ImageView>(R.id.uploadedImg).setImageBitmap(bitmap)
+                                findViewById<ImageView>(R.id.uploadedImg).setImageBitmap(bitmapImage)
                             }
 
                         }
@@ -162,32 +173,51 @@ class MainActivity : BaseActivity() {
             }
         }
         return bitmap
+    }
 
+    private fun rotateBitmap(bitmap: Bitmap, orientation: Float): Bitmap {
+        val width = bitmap.width
+        val height = bitmap.height
+
+        val matrix = Matrix()
+        matrix.postRotate(orientation)
+
+        val resizedBitmap = Bitmap.createBitmap(bitmap, 0, 0, width, height, matrix, true)
+        bitmap.recycle()
+
+        return resizedBitmap
     }
 
     private fun setChart(labelArrary : ArrayList<VisionDetectResult>) {
+
         val entries = ArrayList<BarEntry>()
         val labels = ArrayList<String>()
-        for (label in labelArrary) {
-            entries.add(BarEntry(1f,label.confidence))
+
+
+
+        for (i in 0..4) {
+            val label = labelArrary.get(i)
+            val entry = BarEntry(i*2.toFloat(),label.confidence * 100)
+            entries.add(entry)
             labels.add("${label.name}")
-            Log.d("log","setChart call")
         }
-        val barDataSet = BarDataSet(entries, "Data Value")
+        val barDataSet = BarDataSet(entries, "일치율")
 
 
         val data = BarData(barDataSet)
+        val xAxisFormatter = IndexAxisValueFormatter(labels)
         barChart.data = data
 
         barDataSet.color = resources.getColor(R.color.colorAccent)
-        barChart.animateY(2000)
+        barChart.animateY(500)
         barChart.apply {
+            isDragEnabled = false
             axisLeft.isEnabled = false
             axisRight.isEnabled = false
             legend.isEnabled = false
             description.isEnabled = false
-            xAxis.valueFormatter = IndexAxisValueFormatter(labels)
-            xAxis.position = XAxis.XAxisPosition.BOTTOM_INSIDE
+            xAxis.valueFormatter = xAxisFormatter
+            xAxis.position = XAxis.XAxisPosition.BOTTOM
             xAxis.setDrawLabels(true)
         }
     }
@@ -266,6 +296,7 @@ class MainActivity : BaseActivity() {
             setData(MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
             setAction(Intent.ACTION_GET_CONTENT)
         }
+
         startActivityForResult(
             Intent.createChooser(intent, "Select a photo"),
             GALLERY_PERMISSION_REQUEST
@@ -277,5 +308,6 @@ class MainActivity : BaseActivity() {
         Log.d("log", "image file path")
         return  File(dir, FILE_NAME)
     }
+
 
 }
