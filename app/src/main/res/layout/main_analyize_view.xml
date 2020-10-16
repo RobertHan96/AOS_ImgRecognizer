@@ -33,8 +33,19 @@
                 android:layout_height="200dp"
                 android:scaleType="fitCenter"/>
 
+            <ProgressBar
+                android:visibility="gone"
+                style="?android:attr/progressBarStyleLarge"
+                android:id="@+id/progressBar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:indeterminateOnly="true"
+                android:minHeight="50dp"
+                android:maxHeight="50dp"/>
+
             <com.github.mikephil.charting.charts.BarChart
                 android:id="@+id/barChart"
+                android:visibility="invisible"
                 android:layout_marginTop="8dp"
                 android:layout_marginBottom="8dp"
                 android:clickable="false"

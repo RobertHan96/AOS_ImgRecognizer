@@ -2,6 +2,7 @@ package com.studiofirstzero.imagerecognizier
 import android.app.Activity
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.graphics.ImageDecoder
 import android.graphics.Matrix
 import android.net.Uri
@@ -12,15 +13,18 @@ import android.os.Handler
 import android.provider.MediaStore
 import android.util.Log
 import android.view.Gravity
+import android.view.View
 import android.widget.ImageView
+import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.core.content.FileProvider
+import com.github.mikephil.charting.charts.BarChart
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.BarData
 import com.github.mikephil.charting.data.BarDataSet
 import com.github.mikephil.charting.data.BarEntry
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
-import com.github.mikephil.charting.formatter.ValueFormatter
+import com.github.mikephil.charting.utils.ColorTemplate
 import com.studiohana.facerecognizer.DetectionChooser
 import com.studiohana.facerecognizer.PermissionUtil
 import com.studiohana.facerecognizer.UploadChooser
@@ -93,10 +97,18 @@ class MainActivity : BaseActivity() {
                     val bitmap = getBitmapFromUri(data?.data!!)
                     val bitmapRotated = rotateBitmap(bitmap, 90f)
                     uploadImage(bitmapRotated)
-                }  catch (e: Exception) {
+                } catch (e: Exception) {
                     runOnUiThread {
-                        val toast = Toast.makeText(applicationContext, "이미지만 선택해주세요", Toast.LENGTH_SHORT)
-                        toast.setGravity(Gravity.CENTER, Gravity.CENTER_HORIZONTAL, Gravity.CENTER_VERTICAL)
+                        val toast = Toast.makeText(
+                            applicationContext,
+                            "이미지만 선택해주세요",
+                            Toast.LENGTH_SHORT
+                        )
+                        toast.setGravity(
+                            Gravity.CENTER,
+                            Gravity.CENTER_HORIZONTAL,
+                            Gravity.CENTER_VERTICAL
+                        )
                         toast.show()
                     }
                     Log.d("log", e.toString())
@@ -109,6 +121,9 @@ class MainActivity : BaseActivity() {
     }
 
     private fun uploadImage(bitmapImage: Bitmap) {
+        val chart = findViewById<BarChart>(R.id.barChart)
+        val resultImage = findViewById<ImageView>(R.id.uploadedImg)
+        val progressBar = findViewById<ProgressBar>(R.id.progressBar)
         Log.d("log", "Image is selected")
         try {
             val visionImageDetcetor = VisionImageDetcetor()
@@ -117,32 +132,41 @@ class MainActivity : BaseActivity() {
                 addDetectionChooserNotifierInterface(object :
                     DetectionChooser.DetectionChooserNotifierInterface {
                     override fun detectLabel() {
-                        val detectLabelResults = visionImageDetcetor.detectLabels(bitmapImage).apply {
-                            visionImageDetcetor.logResult(this)
-                            runOnUiThread {
-                                findViewById<ImageView>(R.id.uploadedImg).setImageBitmap(bitmapImage)
+                        val detectLabelResults =
+                            visionImageDetcetor.detectLabels(bitmapImage).apply {
+                                visionImageDetcetor.logResult(this)
+                                runOnUiThread {
+                                    progressBar.visibility = View.VISIBLE
+                                    resultImage.setImageBitmap(bitmapImage)
+                                }
                             }
-                        }
 
                         Handler().postDelayed({
                             runOnUiThread {
-                                setChart(detectLabelResults)
+                                progressBar.visibility = View.GONE
+                                chart.visibility = View.VISIBLE
+//                                setChart(detectLabelResults)
                             }
                         }, 4000)
                     }
 
                     override fun detectLandmark() {
-                        val detectLabelResults = visionImageDetcetor.detectLandmarks(bitmapImage).apply {
-                            visionImageDetcetor.logResult(this)
-
-                            runOnUiThread {
-                                findViewById<ImageView>(R.id.uploadedImg).setImageBitmap(bitmapImage)
+                        val detectLabelResults =
+                            visionImageDetcetor.detectLandmarks(bitmapImage).apply {
+                                visionImageDetcetor.logResult(this)
+                                runOnUiThread {
+                                    progressBar.visibility = View.VISIBLE
+                                    resultImage.setImageBitmap(bitmapImage)
+                                }
                             }
 
-                        }
                         Handler().postDelayed({
-                            setChart(detectLabelResults)
-                        }, 2000)
+                            runOnUiThread {
+                                progressBar.visibility = View.GONE
+                                chart.visibility = View.VISIBLE
+                                setChart(detectLabelResults)
+                            }
+                        }, 4000)
                     }
 
                 })
@@ -151,7 +175,6 @@ class MainActivity : BaseActivity() {
             Log.d("log", e.toString())
 
         }
-
     }
 
     private fun getBitmapFromUri(imageUri: Uri) : Bitmap {
@@ -188,37 +211,38 @@ class MainActivity : BaseActivity() {
         return resizedBitmap
     }
 
-    private fun setChart(labelArrary : ArrayList<VisionDetectResult>) {
-
+    private fun setChart(labelArrary: ArrayList<VisionDetectResult>) {
         val entries = ArrayList<BarEntry>()
         val labels = ArrayList<String>()
+        try {
+            for (i in 0..2) {
+                val label = labelArrary.get(i)
+                val entry = BarEntry(i.toFloat(), label.confidence * 100)
+                entries.add(entry)
+                labels.add("${label.name}")
+            }
+            val colors : ArrayList<Int> = ColorTemplate.COLORFUL_COLORS as ArrayList<Int>
 
+            val barDataSet = BarDataSet(entries, "일치율")
+            barDataSet.colors = colors
 
+            val data = BarData(barDataSet)
+            val xAxisFormatter = IndexAxisValueFormatter(labels)
+            barChart.data = data
+            barChart.animateY(500)
+            barChart.apply {
+                isDragEnabled = false
+                axisLeft.isEnabled = false
+                axisRight.isEnabled = false
+                legend.isEnabled = false
+                description.isEnabled = false
+                xAxis.valueFormatter = xAxisFormatter
+                xAxis.position = XAxis.XAxisPosition.BOTTOM
+                xAxis.setDrawLabels(true)
+            }
 
-        for (i in 0..4) {
-            val label = labelArrary.get(i)
-            val entry = BarEntry(i*2.toFloat(),label.confidence * 100)
-            entries.add(entry)
-            labels.add("${label.name}")
-        }
-        val barDataSet = BarDataSet(entries, "일치율")
-
-
-        val data = BarData(barDataSet)
-        val xAxisFormatter = IndexAxisValueFormatter(labels)
-        barChart.data = data
-
-        barDataSet.color = resources.getColor(R.color.colorAccent)
-        barChart.animateY(500)
-        barChart.apply {
-            isDragEnabled = false
-            axisLeft.isEnabled = false
-            axisRight.isEnabled = false
-            legend.isEnabled = false
-            description.isEnabled = false
-            xAxis.valueFormatter = xAxisFormatter
-            xAxis.position = XAxis.XAxisPosition.BOTTOM
-            xAxis.setDrawLabels(true)
+        } catch (e: IOException) {
+            e.printStackTrace()
         }
     }
 
