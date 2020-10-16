@@ -145,7 +145,7 @@ class MainActivity : BaseActivity() {
                             runOnUiThread {
                                 progressBar.visibility = View.GONE
                                 chart.visibility = View.VISIBLE
-//                                setChart(detectLabelResults)
+                                setChart(detectLabelResults)
                             }
                         }, 4000)
                     }
@@ -221,8 +221,7 @@ class MainActivity : BaseActivity() {
                 entries.add(entry)
                 labels.add("${label.name}")
             }
-            val colors : ArrayList<Int> = ColorTemplate.COLORFUL_COLORS as ArrayList<Int>
-
+            val colors : ArrayList<Int> = arrayListOf(ColorTemplate.rgb("#ff77b2"), Color.BLUE , Color.DKGRAY )
             val barDataSet = BarDataSet(entries, "일치율")
             barDataSet.colors = colors
 
@@ -231,6 +230,8 @@ class MainActivity : BaseActivity() {
             barChart.data = data
             barChart.animateY(500)
             barChart.apply {
+                setScaleEnabled(false)
+                setPinchZoom(false)
                 isDragEnabled = false
                 axisLeft.isEnabled = false
                 axisRight.isEnabled = false
@@ -239,6 +240,7 @@ class MainActivity : BaseActivity() {
                 xAxis.valueFormatter = xAxisFormatter
                 xAxis.position = XAxis.XAxisPosition.BOTTOM
                 xAxis.setDrawLabels(true)
+                xAxis.labelCount = 3
             }
 
         } catch (e: IOException) {
