@@ -16,6 +16,7 @@ import android.view.Gravity
 import android.view.View
 import android.widget.ImageView
 import android.widget.ProgressBar
+import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import com.github.mikephil.charting.charts.BarChart
@@ -124,6 +125,8 @@ class MainActivity : BaseActivity() {
         val chart = findViewById<BarChart>(R.id.barChart)
         val resultImage = findViewById<ImageView>(R.id.uploadedImg)
         val progressBar = findViewById<ProgressBar>(R.id.progressBar)
+        val infromText = findViewById<TextView>(R.id.uploadedImgResult)
+
         Log.d("log", "Image is selected")
         try {
             val visionImageDetcetor = VisionImageDetcetor()
@@ -142,11 +145,33 @@ class MainActivity : BaseActivity() {
                             }
 
                         Handler().postDelayed({
-                            runOnUiThread {
-                                progressBar.visibility = View.GONE
-                                chart.visibility = View.VISIBLE
-                                setChart(detectLabelResults)
+                            if (detectLabelResults.size < 4) {
+                                val toast = Toast.makeText(
+                                    applicationContext,
+                                    "탐색된 내용이 없습니다. 다시 확인해주세요",
+                                    Toast.LENGTH_SHORT
+                                )
+                                toast.setGravity(
+                                    Gravity.CENTER,
+                                    Gravity.CENTER_HORIZONTAL,
+                                    Gravity.CENTER_VERTICAL
+                                )
+                                toast.show()
+
+                                runOnUiThread {
+                                    progressBar.visibility = View.GONE
+                                    chart.visibility = View.VISIBLE
+                                }
+
+                                } else {
+                                runOnUiThread {
+                                    progressBar.visibility = View.GONE
+                                    infromText.visibility = View.INVISIBLE
+                                    chart.visibility = View.VISIBLE
+                                    setChart(detectLabelResults)
+                                }
                             }
+
                         }, 4000)
                     }
 
@@ -161,11 +186,33 @@ class MainActivity : BaseActivity() {
                             }
 
                         Handler().postDelayed({
-                            runOnUiThread {
-                                progressBar.visibility = View.GONE
-                                chart.visibility = View.VISIBLE
-                                setChart(detectLabelResults)
+                            if (detectLabelResults.size < 4) {
+                                val toast = Toast.makeText(
+                                    applicationContext,
+                                    "탐색된 내용이 없습니다. 다시 확인해주세요",
+                                    Toast.LENGTH_SHORT
+                                )
+                                toast.setGravity(
+                                    Gravity.CENTER,
+                                    Gravity.CENTER_HORIZONTAL,
+                                    Gravity.CENTER_VERTICAL
+                                )
+                                toast.show()
+
+                                runOnUiThread {
+                                    progressBar.visibility = View.GONE
+                                    chart.visibility = View.VISIBLE
+                                }
+
+                            } else {
+                                runOnUiThread {
+                                    progressBar.visibility = View.GONE
+                                    infromText.visibility = View.INVISIBLE
+                                    chart.visibility = View.VISIBLE
+                                    setChart(detectLabelResults)
+                                }
                             }
+
                         }, 4000)
                     }
 

@@ -13,7 +13,7 @@ class VisionImageDetcetor {
         }
     }
 
-    fun detectLabels(bitmap : Bitmap) : ArrayList<VisionDetectResult> {
+     fun detectLabels(bitmap : Bitmap) : ArrayList<VisionDetectResult> {
         var detectResults : ArrayList<VisionDetectResult> = ArrayList()
         val visionImage = FirebaseVisionImage.fromBitmap(bitmap)
         val labeler = FirebaseVision.getInstance().cloudImageLabeler
