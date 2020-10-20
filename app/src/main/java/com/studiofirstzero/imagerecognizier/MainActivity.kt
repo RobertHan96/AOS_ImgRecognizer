@@ -1,11 +1,11 @@
 package com.studiofirstzero.imagerecognizier
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.ImageDecoder
-import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -21,6 +21,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import com.bumptech.glide.Glide
+import com.bumptech.glide.request.target.CustomTarget
 import com.github.mikephil.charting.charts.BarChart
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.BarData
@@ -86,8 +87,9 @@ class MainActivity : BaseActivity() {
                 )
                 val resultImage = findViewById<ImageView>(R.id.uploadedImg)
                 val bitmap = getBitmapFromUri(photoUri)
-                Glide.with(mContext).load(photoUri).into(resultImage)
-                uploadImage(bitmap)
+//                Glide.with(mContext).load(photoUri).into(resultImage)
+//                uploadImage(bitmap)
+                setImageToView(mContext,photoUri)
             }
 
             GALLERY_PERMISSION_REQUEST -> {
@@ -98,10 +100,7 @@ class MainActivity : BaseActivity() {
                 )
 
                 try {
-                    val resultImage = findViewById<ImageView>(R.id.uploadedImg)
-                    val bitmap = getBitmapFromUri(photoUri)
-                    Glide.with(mContext).load(data?.data).into(resultImage)
-                    uploadImage(bitmap)
+                    setImageToView(mContext,data?.data!!)
                 } catch (e: Exception) {
                     runOnUiThread {
                         val toast = Toast.makeText(
@@ -122,13 +121,26 @@ class MainActivity : BaseActivity() {
         }
     }
 
+    private fun setImageToView(context: Context, photoUri: Uri) {
+    Glide.with(mContext).asBitmap().load(photoUri).into(object : CustomTarget<Bitmap>(){
+            override fun onLoadCleared(placeholder: Drawable?) {
+                Log.d("log", "image loading is finished.")
+            }
+            override fun onResourceReady(
+                resource: Bitmap,
+                transition: com.bumptech.glide.request.transition.Transition<in Bitmap>?
+            ) {
+                val resultImage = findViewById<ImageView>(R.id.uploadedImg)
+                uploadImage(resource)
+                resultImage.setImageBitmap(resource)
+            }
+        })
+    }
+
     private fun uploadImage(bitmapImage: Bitmap) {
         val chart = findViewById<BarChart>(R.id.barChart)
-        val resultImage = findViewById<ImageView>(R.id.uploadedImg)
         val progressBar = findViewById<ProgressBar>(R.id.progressBar)
         val infromText = findViewById<TextView>(R.id.uploadedImgResult)
-        val drawable: BitmapDrawable = resultImage.getDrawable() as BitmapDrawable
-        val bitmap: Bitmap = drawable.getBitmap()
 
         Log.d("log", "Image is selected")
         try {
@@ -139,7 +151,7 @@ class MainActivity : BaseActivity() {
                     DetectionChooser.DetectionChooserNotifierInterface {
                     override fun detectLabel() {
                         val detectLabelResults =
-                            visionImageDetcetor.detectLabels(bitmap).apply {
+                            visionImageDetcetor.detectLabels(bitmapImage).apply {
                                 visionImageDetcetor.logResult(this)
                                 runOnUiThread {
                                     progressBar.visibility = View.VISIBLE
@@ -162,7 +174,6 @@ class MainActivity : BaseActivity() {
 
                                 runOnUiThread {
                                     progressBar.visibility = View.GONE
-                                    chart.visibility = View.VISIBLE
                                 }
 
                             } else {
@@ -179,7 +190,7 @@ class MainActivity : BaseActivity() {
 
                     override fun detectLandmark() {
                         val detectLabelResults =
-                            visionImageDetcetor.detectLandmarks(bitmap).apply {
+                            visionImageDetcetor.detectLandmarks(bitmapImage).apply {
                                 visionImageDetcetor.logResult(this)
                                 runOnUiThread {
                                     progressBar.visibility = View.VISIBLE
@@ -199,12 +210,9 @@ class MainActivity : BaseActivity() {
                                     Gravity.CENTER_VERTICAL
                                 )
                                 toast.show()
-
                                 runOnUiThread {
                                     progressBar.visibility = View.GONE
-                                    chart.visibility = View.VISIBLE
                                 }
-
                             } else {
                                 runOnUiThread {
                                     progressBar.visibility = View.GONE
