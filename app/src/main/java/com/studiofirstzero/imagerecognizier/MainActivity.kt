@@ -2,9 +2,10 @@ package com.studiofirstzero.imagerecognizier
 import android.app.Activity
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.ImageDecoder
-import android.graphics.Matrix
+import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -19,6 +20,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.FileProvider
+import com.bumptech.glide.Glide
 import com.github.mikephil.charting.charts.BarChart
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.BarData
@@ -74,7 +76,6 @@ class MainActivity : BaseActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         when(requestCode) {
-
 //           카메라 찍기 작업이 잘된 경우에만 동작할 부분을 오버라이드, 여기서는 사진을 저장해서 보여
             CAMERA_PERMISSION_REQUEST -> {
                 if (resultCode != Activity.RESULT_OK) return
@@ -83,7 +84,9 @@ class MainActivity : BaseActivity() {
                     applicationContext.packageName + ".provider",
                     this.createImageFile()
                 )
+                val resultImage = findViewById<ImageView>(R.id.uploadedImg)
                 val bitmap = getBitmapFromUri(photoUri)
+                Glide.with(mContext).load(photoUri).into(resultImage)
                 uploadImage(bitmap)
             }
 
@@ -95,9 +98,10 @@ class MainActivity : BaseActivity() {
                 )
 
                 try {
-                    val bitmap = getBitmapFromUri(data?.data!!)
-                    val bitmapRotated = rotateBitmap(bitmap, 90f)
-                    uploadImage(bitmapRotated)
+                    val resultImage = findViewById<ImageView>(R.id.uploadedImg)
+                    val bitmap = getBitmapFromUri(photoUri)
+                    Glide.with(mContext).load(data?.data).into(resultImage)
+                    uploadImage(bitmap)
                 } catch (e: Exception) {
                     runOnUiThread {
                         val toast = Toast.makeText(
@@ -114,11 +118,8 @@ class MainActivity : BaseActivity() {
                     }
                     Log.d("log", e.toString())
                 }
-
             }
-
         }
-
     }
 
     private fun uploadImage(bitmapImage: Bitmap) {
@@ -126,6 +127,8 @@ class MainActivity : BaseActivity() {
         val resultImage = findViewById<ImageView>(R.id.uploadedImg)
         val progressBar = findViewById<ProgressBar>(R.id.progressBar)
         val infromText = findViewById<TextView>(R.id.uploadedImgResult)
+        val drawable: BitmapDrawable = resultImage.getDrawable() as BitmapDrawable
+        val bitmap: Bitmap = drawable.getBitmap()
 
         Log.d("log", "Image is selected")
         try {
@@ -136,11 +139,10 @@ class MainActivity : BaseActivity() {
                     DetectionChooser.DetectionChooserNotifierInterface {
                     override fun detectLabel() {
                         val detectLabelResults =
-                            visionImageDetcetor.detectLabels(bitmapImage).apply {
+                            visionImageDetcetor.detectLabels(bitmap).apply {
                                 visionImageDetcetor.logResult(this)
                                 runOnUiThread {
                                     progressBar.visibility = View.VISIBLE
-                                    resultImage.setImageBitmap(bitmapImage)
                                 }
                             }
 
@@ -163,7 +165,7 @@ class MainActivity : BaseActivity() {
                                     chart.visibility = View.VISIBLE
                                 }
 
-                                } else {
+                            } else {
                                 runOnUiThread {
                                     progressBar.visibility = View.GONE
                                     infromText.visibility = View.INVISIBLE
@@ -177,11 +179,10 @@ class MainActivity : BaseActivity() {
 
                     override fun detectLandmark() {
                         val detectLabelResults =
-                            visionImageDetcetor.detectLandmarks(bitmapImage).apply {
+                            visionImageDetcetor.detectLandmarks(bitmap).apply {
                                 visionImageDetcetor.logResult(this)
                                 runOnUiThread {
                                     progressBar.visibility = View.VISIBLE
-                                    resultImage.setImageBitmap(bitmapImage)
                                 }
                             }
 
@@ -245,19 +246,6 @@ class MainActivity : BaseActivity() {
         return bitmap
     }
 
-    private fun rotateBitmap(bitmap: Bitmap, orientation: Float): Bitmap {
-        val width = bitmap.width
-        val height = bitmap.height
-
-        val matrix = Matrix()
-        matrix.postRotate(orientation)
-
-        val resizedBitmap = Bitmap.createBitmap(bitmap, 0, 0, width, height, matrix, true)
-        bitmap.recycle()
-
-        return resizedBitmap
-    }
-
     private fun setChart(labelArrary: ArrayList<VisionDetectResult>) {
         val entries = ArrayList<BarEntry>()
         val labels = ArrayList<String>()
@@ -268,7 +256,11 @@ class MainActivity : BaseActivity() {
                 entries.add(entry)
                 labels.add("${label.name}")
             }
-            val colors : ArrayList<Int> = arrayListOf(ColorTemplate.rgb("#ff77b2"), Color.BLUE , Color.DKGRAY )
+            val colors : ArrayList<Int> = arrayListOf(
+                ColorTemplate.rgb("#ff77b2"),
+                Color.BLUE,
+                Color.DKGRAY
+            )
             val barDataSet = BarDataSet(entries, "일치율")
             barDataSet.colors = colors
 
@@ -381,6 +373,5 @@ class MainActivity : BaseActivity() {
         Log.d("log", "image file path")
         return  File(dir, FILE_NAME)
     }
-
 
 }
