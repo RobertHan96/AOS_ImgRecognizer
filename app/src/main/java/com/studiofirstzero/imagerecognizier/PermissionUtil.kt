@@ -6,10 +6,10 @@ import android.content.pm.PackageManager
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 
-class PermissionUtil {
-    private val CAMERA_PERMISSION_REQUEST = 1000
-    private val GALLERY_PERMISSION_REQUEST = 1001
-    private val FILE_NAME = "picture.jpg"
+class PermissionUtil(){
+    val CAMERA_PERMISSION_REQUEST = 1000
+    val GALLERY_PERMISSION_REQUEST = 1001
+    val FILE_NAME = "picture.jpg"
 
     fun requestPermission(
         activity: Activity, requestCode: Int, vararg permissions: String): Boolean
@@ -40,4 +40,30 @@ class PermissionUtil {
     fun permissionGranted(requestCode: Int, permissionCode : Int, grantResults: IntArray):Boolean {
         return requestCode == permissionCode && grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED
     }
+
+    //    권한 설정 및 인텐트 접근 관련
+    fun checkCameraPermission(act: Activity){
+        if (PermissionUtil().requestPermission(
+                act,
+                CAMERA_PERMISSION_REQUEST,
+                android.Manifest.permission.CAMERA,
+                android.Manifest.permission.READ_EXTERNAL_STORAGE
+            )
+        )
+        {
+//            openCamera()
+        }
+    }
+
+    fun checkGalleryPermission(act: Activity){
+        if (PermissionUtil().requestPermission(
+                act, GALLERY_PERMISSION_REQUEST,
+                android.Manifest.permission.READ_EXTERNAL_STORAGE
+            )
+        )
+        {
+//            openGallery()
+        }
+    }
+
 }

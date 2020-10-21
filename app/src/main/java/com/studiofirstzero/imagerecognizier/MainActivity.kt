@@ -28,6 +28,7 @@ import com.github.mikephil.charting.data.BarData
 import com.github.mikephil.charting.data.BarDataSet
 import com.github.mikephil.charting.data.BarEntry
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
+import com.github.mikephil.charting.formatter.ValueFormatter
 import com.github.mikephil.charting.utils.ColorTemplate
 import com.studiohana.facerecognizer.DetectionChooser
 import com.studiohana.facerecognizer.PermissionUtil
@@ -38,30 +39,27 @@ import java.io.File
 import java.io.IOException
 
 class MainActivity : BaseActivity() {
-    private val CAMERA_PERMISSION_REQUEST = 1000
-    private val GALLERY_PERMISSION_REQUEST = 1001
-    private val FILE_NAME = "picture.jpg"
     private var uploadChooser : UploadChooser? = null
+    lateinit var permissionUtil : PermissionUtil
 
     override fun setupEvents() {
         uploadImg.setOnClickListener {
+            permissionUtil = PermissionUtil()
             uploadChooser = UploadChooser().apply {
                 addNotifier(object : UploadChooser.NotifierInterface {
                     override fun cameraOnClick() {
                         Log.d("upload", "camera")
-                        checkCameraPermission()
+                        permissionUtil.checkCameraPermission(mContext).apply { openCamera() }
                     }
 
                     override fun galleryOnClick() {
                         Log.d("upload", "gallery")
-                        checkGalleryPermission()
+                        permissionUtil.checkGalleryPermission(mContext).apply { openGallery() }
                     }
-
-                })
+            })
             }
             uploadChooser!!.show(supportFragmentManager, "")
         }
-
     }
 
     override fun setValues() {
@@ -77,7 +75,7 @@ class MainActivity : BaseActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         when(requestCode) {
-            CAMERA_PERMISSION_REQUEST -> {
+            permissionUtil.CAMERA_PERMISSION_REQUEST -> {
                 if (resultCode != Activity.RESULT_OK) return
                 val photoUri = FileProvider.getUriForFile(this, applicationContext.packageName + ".provider", this.createImageFile())
                 val resultImage = findViewById<ImageView>(R.id.uploadedImg)
@@ -85,7 +83,7 @@ class MainActivity : BaseActivity() {
                 setImageToView(mContext,photoUri)
             }
 
-            GALLERY_PERMISSION_REQUEST -> {
+            permissionUtil.GALLERY_PERMISSION_REQUEST -> {
                 val photoUri = FileProvider.getUriForFile(this, applicationContext.packageName + ".provider", this.createImageFile())
                 try {
                     setImageToView(mContext,data?.data!!)
@@ -136,7 +134,6 @@ class MainActivity : BaseActivity() {
                                 showDetectionResult(this)
                             }
                     }
-
                     override fun detectLandmark() {
                         val detectLabelResults =
                             visionImageDetcetor.detectLandmarks(bitmapImage).apply {
@@ -152,27 +149,33 @@ class MainActivity : BaseActivity() {
     }
 
     private fun showDetectionResult(vision : ArrayList<VisionDetectResult>) {
-        val chart = findViewById<BarChart>(R.id.barChart)
-        val progressBar = findViewById<ProgressBar>(R.id.progressBar)
-        val infromText = findViewById<TextView>(R.id.uploadedImgResult)
-
         runOnUiThread { progressBar.visibility = View.VISIBLE }
         Handler().postDelayed({
             if (vision.size < 4) {
-                val toast = Toast.makeText(applicationContext,  R.string.detection_fail_error, Toast.LENGTH_SHORT)
-                toast.setGravity(Gravity.CENTER, Gravity.CENTER_HORIZONTAL, Gravity.CENTER_VERTICAL)
-                toast.show()
+                showDetectionFailErrorToats()
                 runOnUiThread { progressBar.visibility = View.GONE }
             } else {
-                runOnUiThread {
-                    progressBar.visibility = View.GONE
-                    infromText.visibility = View.INVISIBLE
-                    chart.visibility = View.VISIBLE
-                    setChart(vision)
-                }
+                detectionSuccessAnim(vision)
             }
         }, 4000)
+    }
 
+    private fun showDetectionFailErrorToats() {
+        val toast = Toast.makeText(applicationContext,  R.string.detection_fail_error, Toast.LENGTH_SHORT)
+        toast.setGravity(Gravity.CENTER, Gravity.CENTER_HORIZONTAL, Gravity.CENTER_VERTICAL)
+        toast.show()
+    }
+
+    private fun detectionSuccessAnim(vision : ArrayList<VisionDetectResult>) {
+        val chart = findViewById<BarChart>(R.id.barChart)
+        val progressBar = findViewById<ProgressBar>(R.id.progressBar)
+        val infromText = findViewById<TextView>(R.id.uploadedImgResult)
+        runOnUiThread {
+            progressBar.visibility = View.GONE
+            infromText.visibility = View.INVISIBLE
+            chart.visibility = View.VISIBLE
+            setChart(vision)
+        }
     }
 
     private fun getBitmapFromUri(imageUri: Uri) : Bitmap {
@@ -197,26 +200,14 @@ class MainActivity : BaseActivity() {
     }
 
     private fun setChart(labelArrary: ArrayList<VisionDetectResult>) {
-        val entries = ArrayList<BarEntry>()
-        val labels = ArrayList<String>()
-        try {
-            for (i in 0..2) {
-                val label = labelArrary.get(i)
-                val entry = BarEntry(i.toFloat(), label.confidence * 100)
-                entries.add(entry)
-                labels.add("${label.name}")
-            }
-            val colors : ArrayList<Int> = arrayListOf(
-                ColorTemplate.rgb("#ff77b2"),
-                Color.BLUE,
-                Color.DKGRAY
-            )
-            val barDataSet = BarDataSet(entries, "일치율")
-            barDataSet.colors = colors
+        val chartDrawer = ChartDrawer()
+        lateinit var chartData : BarData
+        lateinit var indexLabels : ArrayList<String>
 
-            val data = BarData(barDataSet)
-            val xAxisFormatter = IndexAxisValueFormatter(labels)
-            barChart.data = data
+        if (chartDrawer.isValidDetectionResultArrary(labelArrary) == true ) {
+            chartData = chartDrawer.getChartEntries(labelArrary)
+            indexLabels = chartDrawer.getChartIndex(labelArrary)
+            barChart.data = chartData
             barChart.animateY(500)
             barChart.apply {
                 setScaleEnabled(false)
@@ -226,67 +217,29 @@ class MainActivity : BaseActivity() {
                 axisRight.isEnabled = false
                 legend.isEnabled = false
                 description.isEnabled = false
-                xAxis.valueFormatter = xAxisFormatter
+                xAxis.valueFormatter = IndexAxisValueFormatter(indexLabels)
                 xAxis.position = XAxis.XAxisPosition.BOTTOM
                 xAxis.setDrawLabels(true)
                 xAxis.labelCount = 3
             }
-
-        } catch (e: IOException) {
-            e.printStackTrace()
+        } else {
+            showDetectionFailErrorToats()
         }
     }
 
     //    카메라 or 갤러리 선택시 실행할 로직을 결정하는 함수
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode){
-            GALLERY_PERMISSION_REQUEST -> {
-                if (PermissionUtil().permissionGranted(
-                        requestCode,
-                        GALLERY_PERMISSION_REQUEST,
-                        grantResults
-                    )
-                )
+            permissionUtil.GALLERY_PERMISSION_REQUEST -> {
+                if (PermissionUtil().permissionGranted(requestCode, permissionUtil.GALLERY_PERMISSION_REQUEST, grantResults) )
                     openGallery()
             }
 
-            CAMERA_PERMISSION_REQUEST -> {
-                if (PermissionUtil().permissionGranted(
-                        requestCode,
-                        CAMERA_PERMISSION_REQUEST,
-                        grantResults
-                    )
-                )
+            permissionUtil.CAMERA_PERMISSION_REQUEST -> {
+                if (PermissionUtil().permissionGranted(requestCode, permissionUtil.CAMERA_PERMISSION_REQUEST, grantResults) )
                     openCamera()
             }
-        }
-    }
-
-//    권한 설정 및 인텐트 접근 관련
-    private fun checkCameraPermission(){
-        if (PermissionUtil().requestPermission(
-                this,
-                CAMERA_PERMISSION_REQUEST,
-                android.Manifest.permission.CAMERA,
-                android.Manifest.permission.READ_EXTERNAL_STORAGE
-            )
-        ) {
-            openCamera()
-        }
-    }
-
-    private fun checkGalleryPermission(){
-        if (PermissionUtil().requestPermission(
-                this, GALLERY_PERMISSION_REQUEST,
-                android.Manifest.permission.READ_EXTERNAL_STORAGE
-            )
-        ) {
-            openGallery()
         }
     }
 
@@ -301,7 +254,7 @@ class MainActivity : BaseActivity() {
             Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
                 putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }, CAMERA_PERMISSION_REQUEST
+            }, permissionUtil.CAMERA_PERMISSION_REQUEST
         )
     }
 
@@ -314,14 +267,14 @@ class MainActivity : BaseActivity() {
 
         startActivityForResult(
             Intent.createChooser(intent, "Select a photo"),
-            GALLERY_PERMISSION_REQUEST
+            permissionUtil.GALLERY_PERMISSION_REQUEST
         )
     }
 
     private fun createImageFile() : File {
         val dir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
         Log.d("log", "image file path")
-        return  File(dir, FILE_NAME)
+        return  File(dir, permissionUtil.FILE_NAME)
     }
 
 }
