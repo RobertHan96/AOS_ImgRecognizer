@@ -43,13 +43,6 @@ class MainActivity : BaseActivity() {
     private val FILE_NAME = "picture.jpg"
     private var uploadChooser : UploadChooser? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        setValues()
-        setupEvents()
-    }
-
     override fun setupEvents() {
         uploadImg.setOnClickListener {
             uploadChooser = UploadChooser().apply {
@@ -74,40 +67,31 @@ class MainActivity : BaseActivity() {
     override fun setValues() {
     }
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+        setValues()
+        setupEvents()
+    }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         when(requestCode) {
-//           카메라 찍기 작업이 잘된 경우에만 동작할 부분을 오버라이드, 여기서는 사진을 저장해서 보여
             CAMERA_PERMISSION_REQUEST -> {
                 if (resultCode != Activity.RESULT_OK) return
-                val photoUri = FileProvider.getUriForFile(
-                    this,
-                    applicationContext.packageName + ".provider",
-                    this.createImageFile()
-                )
+                val photoUri = FileProvider.getUriForFile(this, applicationContext.packageName + ".provider", this.createImageFile())
                 val resultImage = findViewById<ImageView>(R.id.uploadedImg)
                 val bitmap = getBitmapFromUri(photoUri)
-//                Glide.with(mContext).load(photoUri).into(resultImage)
-//                uploadImage(bitmap)
                 setImageToView(mContext,photoUri)
             }
 
             GALLERY_PERMISSION_REQUEST -> {
-                val photoUri = FileProvider.getUriForFile(
-                    this,
-                    applicationContext.packageName + ".provider",
-                    this.createImageFile()
-                )
-
+                val photoUri = FileProvider.getUriForFile(this, applicationContext.packageName + ".provider", this.createImageFile())
                 try {
                     setImageToView(mContext,data?.data!!)
                 } catch (e: Exception) {
                     runOnUiThread {
-                        val toast = Toast.makeText(
-                            applicationContext,
-                            "이미지만 선택해주세요",
-                            Toast.LENGTH_SHORT
-                        )
+                        val toast = Toast.makeText(applicationContext, R.string.image_type_error, Toast.LENGTH_SHORT)
                         toast.setGravity(
                             Gravity.CENTER,
                             Gravity.CENTER_HORIZONTAL,
@@ -138,11 +122,7 @@ class MainActivity : BaseActivity() {
     }
 
     private fun uploadImage(bitmapImage: Bitmap) {
-        val chart = findViewById<BarChart>(R.id.barChart)
-        val progressBar = findViewById<ProgressBar>(R.id.progressBar)
-        val infromText = findViewById<TextView>(R.id.uploadedImgResult)
-
-        Log.d("log", "Image is selected")
+        Log.d("log", "Image is uploading... detection start")
         try {
             val visionImageDetcetor = VisionImageDetcetor()
             uploadChooser?.dismiss()
@@ -153,84 +133,46 @@ class MainActivity : BaseActivity() {
                         val detectLabelResults =
                             visionImageDetcetor.detectLabels(bitmapImage).apply {
                                 visionImageDetcetor.logResult(this)
-                                runOnUiThread {
-                                    progressBar.visibility = View.VISIBLE
-                                }
+                                showDetectionResult(this)
                             }
-
-                        Handler().postDelayed({
-                            if (detectLabelResults.size < 4) {
-                                val toast = Toast.makeText(
-                                    applicationContext,
-                                    "탐색된 내용이 없습니다. 다시 확인해주세요",
-                                    Toast.LENGTH_SHORT
-                                )
-                                toast.setGravity(
-                                    Gravity.CENTER,
-                                    Gravity.CENTER_HORIZONTAL,
-                                    Gravity.CENTER_VERTICAL
-                                )
-                                toast.show()
-
-                                runOnUiThread {
-                                    progressBar.visibility = View.GONE
-                                }
-
-                            } else {
-                                runOnUiThread {
-                                    progressBar.visibility = View.GONE
-                                    infromText.visibility = View.INVISIBLE
-                                    chart.visibility = View.VISIBLE
-                                    setChart(detectLabelResults)
-                                }
-                            }
-
-                        }, 4000)
                     }
 
                     override fun detectLandmark() {
                         val detectLabelResults =
                             visionImageDetcetor.detectLandmarks(bitmapImage).apply {
                                 visionImageDetcetor.logResult(this)
-                                runOnUiThread {
-                                    progressBar.visibility = View.VISIBLE
-                                }
+                                showDetectionResult(this)
                             }
-
-                        Handler().postDelayed({
-                            if (detectLabelResults.size < 4) {
-                                val toast = Toast.makeText(
-                                    applicationContext,
-                                    "탐색된 내용이 없습니다. 다시 확인해주세요",
-                                    Toast.LENGTH_SHORT
-                                )
-                                toast.setGravity(
-                                    Gravity.CENTER,
-                                    Gravity.CENTER_HORIZONTAL,
-                                    Gravity.CENTER_VERTICAL
-                                )
-                                toast.show()
-                                runOnUiThread {
-                                    progressBar.visibility = View.GONE
-                                }
-                            } else {
-                                runOnUiThread {
-                                    progressBar.visibility = View.GONE
-                                    infromText.visibility = View.INVISIBLE
-                                    chart.visibility = View.VISIBLE
-                                    setChart(detectLabelResults)
-                                }
-                            }
-
-                        }, 4000)
                     }
-
                 })
             }.show(supportFragmentManager, "")
         } catch (e: Exception) {
             Log.d("log", e.toString())
-
         }
+    }
+
+    private fun showDetectionResult(vision : ArrayList<VisionDetectResult>) {
+        val chart = findViewById<BarChart>(R.id.barChart)
+        val progressBar = findViewById<ProgressBar>(R.id.progressBar)
+        val infromText = findViewById<TextView>(R.id.uploadedImgResult)
+
+        runOnUiThread { progressBar.visibility = View.VISIBLE }
+        Handler().postDelayed({
+            if (vision.size < 4) {
+                val toast = Toast.makeText(applicationContext,  R.string.detection_fail_error, Toast.LENGTH_SHORT)
+                toast.setGravity(Gravity.CENTER, Gravity.CENTER_HORIZONTAL, Gravity.CENTER_VERTICAL)
+                toast.show()
+                runOnUiThread { progressBar.visibility = View.GONE }
+            } else {
+                runOnUiThread {
+                    progressBar.visibility = View.GONE
+                    infromText.visibility = View.INVISIBLE
+                    chart.visibility = View.VISIBLE
+                    setChart(vision)
+                }
+            }
+        }, 4000)
+
     }
 
     private fun getBitmapFromUri(imageUri: Uri) : Bitmap {

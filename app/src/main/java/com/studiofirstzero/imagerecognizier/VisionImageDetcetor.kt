@@ -1,10 +1,16 @@
 package com.studiofirstzero.imagerecognizier
 
+import android.content.Context
 import android.graphics.Bitmap
+import android.os.Handler
 import android.util.Log
+import android.view.Gravity
+import android.view.View
 import android.widget.TextView
+import android.widget.Toast
 import com.google.firebase.ml.vision.FirebaseVision
 import com.google.firebase.ml.vision.common.FirebaseVisionImage
+import kotlinx.android.synthetic.main.main_analyize_view.*
 
 class VisionImageDetcetor {
     fun logResult(results: ArrayList<VisionDetectResult>) {

@@ -8,5 +8,8 @@
     <string name="detection_label">유사도 분석</string>
     <string name="detection_landmark">랜드마크 여부 분석</string>
     <string name="cancel">취소</string>
+    <string name="detection_fail_error">탐색된 내용이 없습니다.\n이미지를 다시 확인해주세요.</string>
+    <string name="image_type_error">이미지만 선택해주세요.</string>
+
 
 </resources>

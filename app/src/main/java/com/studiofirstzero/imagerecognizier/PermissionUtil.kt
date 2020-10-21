@@ -7,6 +7,10 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 
 class PermissionUtil {
+    private val CAMERA_PERMISSION_REQUEST = 1000
+    private val GALLERY_PERMISSION_REQUEST = 1001
+    private val FILE_NAME = "picture.jpg"
+
     fun requestPermission(
         activity: Activity, requestCode: Int, vararg permissions: String): Boolean
         {
