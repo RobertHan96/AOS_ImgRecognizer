@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.studiofirstzero.imagerecognizier.MainActivity
 
 class PermissionUtil(){
     val CAMERA_PERMISSION_REQUEST = 1000
@@ -42,28 +43,20 @@ class PermissionUtil(){
     }
 
     //    권한 설정 및 인텐트 접근 관련
-    fun checkCameraPermission(act: Activity){
-        if (PermissionUtil().requestPermission(
-                act,
-                CAMERA_PERMISSION_REQUEST,
-                android.Manifest.permission.CAMERA,
-                android.Manifest.permission.READ_EXTERNAL_STORAGE
-            )
+    fun checkCameraPermission(act: Activity) : Boolean {
+        return PermissionUtil().requestPermission(
+            act,
+            CAMERA_PERMISSION_REQUEST,
+            android.Manifest.permission.CAMERA,
+            android.Manifest.permission.READ_EXTERNAL_STORAGE
         )
-        {
-//            openCamera()
-        }
     }
 
-    fun checkGalleryPermission(act: Activity){
-        if (PermissionUtil().requestPermission(
+    fun checkGalleryPermission(act: Activity) : Boolean {
+        return  (PermissionUtil().requestPermission(
                 act, GALLERY_PERMISSION_REQUEST,
                 android.Manifest.permission.READ_EXTERNAL_STORAGE
-            )
-        )
-        {
-//            openGallery()
-        }
+        ))
     }
 
 }

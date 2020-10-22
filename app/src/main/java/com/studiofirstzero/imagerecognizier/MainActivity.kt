@@ -49,12 +49,16 @@ class MainActivity : BaseActivity() {
                 addNotifier(object : UploadChooser.NotifierInterface {
                     override fun cameraOnClick() {
                         Log.d("upload", "camera")
-                        permissionUtil.checkCameraPermission(mContext).apply { openCamera() }
+                        if(permissionUtil.checkCameraPermission(mContext)) {
+                            openCamera()
+                        }
                     }
 
                     override fun galleryOnClick() {
                         Log.d("upload", "gallery")
-                        permissionUtil.checkGalleryPermission(mContext).apply { openGallery() }
+                        if (permissionUtil.checkGalleryPermission(mContext)) {
+                            openGallery()
+                        }
                     }
             })
             }
@@ -152,7 +156,7 @@ class MainActivity : BaseActivity() {
         runOnUiThread { progressBar.visibility = View.VISIBLE }
         Handler().postDelayed({
             if (vision.size < 4) {
-                showDetectionFailErrorToats()
+                showDetectionFailErrorToast()
                 runOnUiThread { progressBar.visibility = View.GONE }
             } else {
                 detectionSuccessAnim(vision)
@@ -160,7 +164,7 @@ class MainActivity : BaseActivity() {
         }, 4000)
     }
 
-    private fun showDetectionFailErrorToats() {
+    private fun showDetectionFailErrorToast() {
         val toast = Toast.makeText(applicationContext,  R.string.detection_fail_error, Toast.LENGTH_SHORT)
         toast.setGravity(Gravity.CENTER, Gravity.CENTER_HORIZONTAL, Gravity.CENTER_VERTICAL)
         toast.show()
@@ -223,7 +227,7 @@ class MainActivity : BaseActivity() {
                 xAxis.labelCount = 3
             }
         } else {
-            showDetectionFailErrorToats()
+            showDetectionFailErrorToast()
         }
     }
 
