@@ -1,11 +1,9 @@
 package com.studiohana.facerecognizer
 
 import android.app.Activity
-import android.content.Context
 import android.content.pm.PackageManager
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.studiofirstzero.imagerecognizier.MainActivity
 
 class PermissionUtil(){
     val CAMERA_PERMISSION_REQUEST = 1000

@@ -3,7 +3,6 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.Color
 import android.graphics.ImageDecoder
 import android.graphics.drawable.Drawable
 import android.net.Uri
@@ -25,11 +24,10 @@ import com.bumptech.glide.request.target.CustomTarget
 import com.github.mikephil.charting.charts.BarChart
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.BarData
-import com.github.mikephil.charting.data.BarDataSet
-import com.github.mikephil.charting.data.BarEntry
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
-import com.github.mikephil.charting.formatter.ValueFormatter
-import com.github.mikephil.charting.utils.ColorTemplate
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.MobileAds
 import com.studiohana.facerecognizer.DetectionChooser
 import com.studiohana.facerecognizer.PermissionUtil
 import com.studiohana.facerecognizer.UploadChooser
@@ -67,6 +65,7 @@ class MainActivity : BaseActivity() {
     }
 
     override fun setValues() {
+        setGoogleAds()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -74,6 +73,14 @@ class MainActivity : BaseActivity() {
         setContentView(R.layout.activity_main)
         setValues()
         setupEvents()
+    }
+
+    private fun setGoogleAds() {
+        MobileAds.initialize(mContext)
+        val mAdView = findViewById<View>(R.id.adView) as AdView
+        val adRequest = AdRequest.Builder().build()
+        mAdView.loadAd(adRequest)
+        AdsUtil().setAdsViewEventHandler(mAdView)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
